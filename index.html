@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bharat Explorer: Grade 4 Social Science Quest</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka for playful headings, Nunito for clean readable body text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Fonts and Game Animations */
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #FFF7ED 0%, #EFF6FF 50%, #F0FDF4 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        h1, h2, h3, .font-fredoka {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* 3D Tactile Game Buttons */
+        .btn-game {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-game:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-game:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-game:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Option Cards */
+        .option-card {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0 #CBD5E1;
+        }
+        .option-card:hover:not(.disabled) {
+            transform: translateY(-2px);
+            border-color: #F97316;
+            box-shadow: 0 6px 0 #FDBA74;
+        }
+        .option-card:active:not(.disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #CBD5E1;
+        }
+        .option-correct {
+            background-color: #DCFCE7 !important;
+            border-color: #22C55E !important;
+            box-shadow: 0 4px 0 #16A34A !important;
+            color: #14532D !important;
+        }
+        .option-wrong {
+            background-color: #FEE2E2 !important;
+            border-color: #EF4444 !important;
+            box-shadow: 0 4px 0 #DC2626 !important;
+            color: #7F1D1D !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Match Card Selected State */
+        .match-selected {
+            border-color: #3B82F6 !important;
+            background-color: #DBEAFE !important;
+            transform: scale(1.03);
+        }
+        .match-solved {
+            background-color: #DCFCE7 !important;
+            border-color: #22C55E !important;
+            opacity: 0.75;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col justify-between">
+
+    <!-- Confetti Overlay Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Top Navigation & Player HUD -->
+    <header class="bg-white/90 backdrop-blur-md border-b-4 border-orange-400 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <!-- Brand / Home Button -->
+            <button onclick="goHome()" class="flex items-center gap-2 text-left group focus:outline-none">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 via-white to-green-600 p-0.5 shadow-md flex items-center justify-center group-hover:rotate-6 transition-transform">
+                    <div class="bg-white w-full h-full rounded-[10px] flex items-center justify-center text-xl">
+                        🧭
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-orange-600 leading-tight">Bharat Explorer</h1>
+                    <p class="text-xs font-bold text-slate-500">Grade 4 Social Science</p>
+                </div>
+            </button>
+
+            <!-- Player Stats HUD -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- Rank Badge -->
+                <div class="hidden sm:flex items-center gap-1.5 bg-indigo-50 border-2 border-indigo-200 px-3 py-1.5 rounded-full">
+                    <span id="hud-rank-icon" class="text-base">🎒</span>
+                    <span id="hud-rank-title" class="text-xs font-extrabold text-indigo-700">Junior Traveller</span>
+                </div>
+
+                <!-- Stars Counter -->
+                <div class="flex items-center gap-1 bg-amber-50 border-2 border-amber-300 px-3 py-1.5 rounded-full">
+                    <span class="text-base">⭐</span>
+                    <span id="hud-stars" class="text-sm font-extrabold text-amber-700">0/33</span>
+                </div>
+
+                <!-- Points Counter -->
+                <div class="flex items-center gap-1 bg-emerald-50 border-2 border-emerald-300 px-3 py-1.5 rounded-full">
+                    <span class="text-base">🏆</span>
+                    <span id="hud-score" class="text-sm font-extrabold text-emerald-700">0</span>
+                </div>
+
+                <!-- Sound & Voice Toggle -->
+                <button id="sound-toggle" onclick="toggleSound()" title="Toggle Sound & Voice" class="px-3 h-10 rounded-full bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 flex items-center justify-center gap-1.5 text-sm font-extrabold text-slate-700 transition-colors">
+                    <span id="sound-icon" class="text-base">🔊</span>
+                    <span id="sound-label" class="hidden md:inline">Sound & Voice: ON</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main id="app-container" class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 sm:py-8">
+        
+        <!-- ==================== VIEW 1: HOME MENU ==================== -->
+        <section id="view-home" class="animate-pop">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-green-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl mb-8 relative overflow-hidden border-4 border-white">
+                <div class="relative z-10 max-w-2xl">
+                    <span class="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
+                        CBSE Class 4 • Chapters 1 to 11
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mb-2 drop-shadow-sm">
+                        Welcome, Young Explorer! 🇮🇳
+                    </h2>
+                    <p class="text-white/95 text-base sm:text-lg font-semibold mb-4">
+                        Travel across India’s mighty Himalayas, golden Thar Desert, fertile plains, coastal islands, forests, and natural resources! Earn stars and become a <strong>Bharat Champion</strong>.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3 text-sm font-bold bg-black/15 w-fit px-4 py-2 rounded-2xl">
+                        <span>Current Rank: <strong id="home-rank-text" class="text-yellow-200">Junior Traveller</strong></span>
+                        <span>•</span>
+                        <span>Next Rank at <strong id="home-next-rank" class="text-yellow-200">250 pts</strong></span>
+                    </div>
+                </div>
+                <!-- Decorative Giant Emoji -->
+                <div class="hidden md:block absolute right-8 bottom-2 text-8xl opacity-90 animate-float select-none">
+                    🗺️
+                </div>
+            </div>
+
+            <!-- 3 Game Mode Cards -->
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span>🎮</span> Choose Your Adventure Mode
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                
+                <!-- Mode 1: Chapter Quest -->
+                <div class="bg-white rounded-3xl p-6 border-4 border-sky-200 shadow-lg flex flex-col justify-between hover:border-sky-400 transition-all">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-sky-100 text-3xl flex items-center justify-center mb-4">
+                            🏔️
+                        </div>
+                        <h4 class="text-xl font-bold text-sky-900 mb-2">1. Chapter-by-Chapter Quest</h4>
+                        <p class="text-slate-600 text-sm font-semibold mb-6">
+                            Explore all 11 chapters step-by-step! Answer 5 questions per chapter, learn fun facts, and collect up to 3 stars each.
+                        </p>
+                    </div>
+                    <button onclick="openChapterMap()" class="btn-game w-full py-3.5 px-4 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-fredoka font-bold text-lg">
+                        Start Chapter Quest 🚀
+                    </button>
+                </div>
+
+                <!-- Mode 2: Rapid Fire -->
+                <div class="bg-white rounded-3xl p-6 border-4 border-orange-200 shadow-lg flex flex-col justify-between hover:border-orange-400 transition-all">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-orange-100 text-3xl flex items-center justify-center mb-4">
+                            ⚡
+                        </div>
+                        <h4 class="text-xl font-bold text-orange-900 mb-2">2. Rapid Fire Challenge</h4>
+                        <p class="text-slate-600 text-sm font-semibold mb-6">
+                            Race against the 60-second clock! Mixed questions from Chapters 1–11 with streak multipliers for bonus points.
+                        </p>
+                    </div>
+                    <button onclick="startRapidFire()" class="btn-game w-full py-3.5 px-4 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-fredoka font-bold text-lg">
+                        Play Rapid Fire 🔥
+                    </button>
+                </div>
+
+                <!-- Mode 3: Match & Sort -->
+                <div class="bg-white rounded-3xl p-6 border-4 border-emerald-200 shadow-lg flex flex-col justify-between hover:border-emerald-400 transition-all">
+                    <div>
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-3xl flex items-center justify-center mb-4">
+                            🧩
+                        </div>
+                        <h4 class="text-xl font-bold text-emerald-900 mb-2">3. Match & Sort Lab</h4>
+                        <p class="text-slate-600 text-sm font-semibold mb-6">
+                            Tap to pair India's natural resources, soils, national parks, dams, and landforms across 4 interactive rounds!
+                        </p>
+                    </div>
+                    <button onclick="startMatchGame()" class="btn-game w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-fredoka font-bold text-lg">
+                        Play Match & Sort 🎯
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Reset Progress Footer Link -->
+            <div class="text-center">
+                <button onclick="confirmResetProgress()" class="text-xs font-bold text-slate-400 hover:text-rose-500 underline transition-colors">
+                    Reset Saved Stars & Score
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==================== VIEW 2: CHAPTER MAP (1-11) ==================== -->
+        <section id="view-chapters" class="hidden animate-pop">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                    <button onclick="goHome()" class="text-sm font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 mb-1">
+                        ← Back to Main Menu
+                    </button>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-800">Chapter-by-Chapter Quest</h2>
+                    <p class="text-slate-600 text-sm font-semibold">Select any of the 11 chapters to play and earn 3 stars!</p>
+                </div>
+                <div class="bg-white px-4 py-2 rounded-2xl border-2 border-amber-300 shadow-sm">
+                    <span class="text-sm font-extrabold text-slate-700">Total Chapter Stars: </span>
+                    <span id="map-total-stars" class="text-lg font-fredoka font-bold text-amber-500">0 / 33 ⭐</span>
+                </div>
+            </div>
+
+            <!-- 11 Chapters Grid -->
+            <div id="chapters-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </section>
+
+
+        <!-- ==================== VIEW 3: QUIZ ARENA (CHAPTER & RAPID FIRE) ==================== -->
+        <section id="view-quiz" class="hidden animate-pop max-w-3xl mx-auto">
+            <!-- Quiz Top Bar -->
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <button onclick="quitQuiz()" class="px-3 py-1.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-100 text-sm font-extrabold">
+                    ✖ Quit
+                </button>
+
+                <!-- Mode / Chapter Pill -->
+                <div id="quiz-header-badge" class="px-4 py-1.5 rounded-full bg-sky-100 border-2 border-sky-300 text-sky-800 text-xs sm:text-sm font-extrabold truncate max-w-[220px] sm:max-w-none">
+                    Chapter 1: Our Country India
+                </div>
+
+                <!-- Timer or Question Counter -->
+                <div id="quiz-status-pill" class="px-3.5 py-1.5 rounded-full bg-amber-100 border-2 border-amber-300 text-amber-900 text-sm font-extrabold">
+                    Q 1 / 5
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-200 h-3.5 rounded-full overflow-hidden mb-6 border border-slate-300">
+                <div id="quiz-progress-bar" class="bg-gradient-to-r from-orange-400 to-green-500 h-full transition-all duration-300" style="width: 20%"></div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border-4 border-slate-200 shadow-xl mb-5">
+                <div class="flex items-start gap-3 mb-6">
+                    <span id="question-emoji" class="text-4xl sm:text-5xl bg-orange-50 p-3 rounded-2xl border-2 border-orange-100">🇮🇳</span>
+                    <div>
+                        <span id="question-topic-tag" class="text-xs font-extrabold uppercase tracking-wider text-orange-500 block mb-1">
+                            Geography
+                        </span>
+                        <h3 id="question-text" class="text-xl sm:text-2xl font-bold text-slate-800 leading-snug">
+                            Question goes here?
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Options Grid -->
+                <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <!-- Option buttons injected here -->
+                </div>
+            </div>
+
+            <!-- Immediate Learning Feedback Box -->
+            <div id="feedback-box" class="hidden rounded-3xl p-5 border-4 mb-5 animate-pop">
+                <div class="flex items-start gap-3">
+                    <div id="feedback-icon" class="text-3xl">🎉</div>
+                    <div class="flex-grow">
+                        <h4 id="feedback-title" class="text-lg font-bold mb-1">Awesome Job!</h4>
+                        <p id="feedback-explanation" class="text-sm font-semibold leading-relaxed">
+                            Explanation text goes here.
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button id="next-question-btn" onclick="nextQuestion()" class="btn-game px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-fredoka font-bold text-base">
+                        Next Question →
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== VIEW 4: MATCH & SORT MINI-GAME ==================== -->
+        <section id="view-match" class="hidden animate-pop max-w-4xl mx-auto">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <button onclick="goHome()" class="px-3.5 py-1.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 hover:bg-slate-100 text-sm font-extrabold">
+                    ← Menu
+                </button>
+                <div class="text-center">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Match & Sort Lab</span>
+                    <h2 id="match-round-title" class="text-xl sm:text-2xl font-bold text-slate-800">Round 1: Natural Resources Lab</h2>
+                </div>
+                <div class="bg-emerald-100 border-2 border-emerald-300 px-3.5 py-1.5 rounded-full text-sm font-extrabold text-emerald-800">
+                    Round <span id="match-round-num">1</span> / 4
+                </div>
+            </div>
+
+            <p class="text-center text-slate-600 text-sm font-bold mb-5 bg-white/80 py-2 px-4 rounded-2xl border border-slate-200">
+                👆 Tap one card on the <strong>Left</strong> and its matching partner on the <strong>Right</strong>!
+            </p>
+
+            <!-- Two-Column Matching Board -->
+            <div class="grid grid-cols-2 gap-4 sm:gap-8 mb-6">
+                <!-- Left Column: Terms -->
+                <div id="match-left-col" class="flex flex-col gap-3"></div>
+                <!-- Right Column: Descriptions -->
+                <div id="match-right-col" class="flex flex-col gap-3"></div>
+            </div>
+
+            <!-- Match Feedback Banner -->
+            <div id="match-feedback" class="hidden text-center p-4 rounded-2xl font-bold text-base mb-4 animate-pop"></div>
+        </section>
+
+
+        <!-- ==================== VIEW 5: RESULTS & SUMMARY ==================== -->
+        <section id="view-results" class="hidden animate-pop max-w-xl mx-auto text-center">
+            <div class="bg-white rounded-3xl p-8 border-4 border-amber-300 shadow-2xl">
+                <div id="result-trophy" class="text-7xl mb-3 animate-float">🏆</div>
+                <h2 id="result-title" class="text-3xl font-bold text-slate-800 mb-1">Chapter Complete!</h2>
+                <p id="result-subtitle" class="text-slate-500 font-bold mb-5">Great exploring across India!</p>
+
+                <!-- Stars Earned Display -->
+                <div id="result-stars-box" class="flex justify-center gap-3 text-5xl mb-6">
+                    <span>⭐</span><span>⭐</span><span>⭐</span>
+                </div>
+
+                <!-- Score Summary Pill -->
+                <div class="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200 mb-6 grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs font-extrabold text-slate-400 uppercase">Points Earned</p>
+                        <p id="result-points" class="text-2xl font-fredoka font-bold text-emerald-600">+100</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-extrabold text-slate-400 uppercase">Accuracy</p>
+                        <p id="result-accuracy" class="text-2xl font-fredoka font-bold text-sky-600">5 / 5</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button id="result-retry-btn" onclick="retryLastMode()" class="btn-game px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-fredoka font-bold text-lg">
+                        Play Again 🔄
+                    </button>
+                    <button onclick="openChapterMap()" class="btn-game px-6 py-3 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-fredoka font-bold text-lg">
+                        Chapter Map 🗺️
+                    </button>
+                    <button onclick="goHome()" class="btn-game px-6 py-3 rounded-2xl bg-slate-600 hover:bg-slate-700 text-white font-fredoka font-bold text-lg">
+                        Home 🏠
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Modal Dialog (Replaces alert/confirm) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 border-4 border-orange-300 shadow-2xl text-center animate-pop">
+            <div class="text-4xl mb-2">⚠️</div>
+            <h3 id="modal-title" class="text-xl font-bold text-slate-800 mb-2">Reset Progress?</h3>
+            <p id="modal-msg" class="text-sm text-slate-600 font-semibold mb-6">This will clear all your earned stars and points. Are you sure?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 font-bold text-slate-700">
+                    Cancel
+                </button>
+                <button id="modal-confirm-btn" class="px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 font-bold text-white">
+                    Yes, Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs font-bold text-slate-500">
+        Bharat Explorer • CBSE Grade 4 Social Science (Chapters 1–11)
+    </footer>
+
+    <!-- ==================== GAME LOGIC & CURRICULUM DATA ==================== -->
+    <script>
+        /* --------------------------------------------------------------------------
+           1. CURRICULUM DATA: CBSE GRADE 4 SOCIAL SCIENCE (CHAPTERS 1 TO 11)
+           -------------------------------------------------------------------------- */
+        const CHAPTERS = [
+            {
+                id: 1,
+                title: "Our Country India",
+                subtitle: "Location, Neighbours, States & Union Territories",
+                emoji: "🇮🇳",
+                color: "orange",
+                questions: [
+                    {
+                        q: "In which continent is our country India located?",
+                        options: ["Africa", "Asia", "Europe", "Australia"],
+                        answer: 1,
+                        explanation: "India is located in the southern part of Asia and is the seventh-largest country in the world by area."
+                    },
+                    {
+                        q: "Which three water bodies surround the southern peninsula of India?",
+                        options: ["Arabian Sea, Bay of Bengal, Indian Ocean", "Red Sea, Black Sea, Arctic Ocean", "Pacific Ocean, Atlantic Ocean, Arabian Sea", "Caspian Sea, Bay of Bengal, Pacific Ocean"],
+                        answer: 0,
+                        explanation: "India is surrounded by the Arabian Sea in the west, the Bay of Bengal in the east, and the Indian Ocean in the south."
+                    },
+                    {
+                        q: "How many States and Union Territories does India currently have?",
+                        options: ["29 States and 7 Union Territories", "28 States and 8 Union Territories", "25 States and 9 Union Territories", "30 States and 6 Union Territories"],
+                        answer: 1,
+                        explanation: "India is divided into 28 States and 8 Union Territories, with New Delhi as the National Capital."
+                    },
+                    {
+                        q: "Which of these is an island neighbour of India in the Indian Ocean?",
+                        options: ["Nepal", "Bhutan", "Sri Lanka", "Afghanistan"],
+                        answer: 2,
+                        explanation: "Sri Lanka and Maldives are India's two island neighbours across the sea in the Indian Ocean."
+                    },
+                    {
+                        q: "Which imaginary line passes almost through the middle of India?",
+                        options: ["Equator", "Tropic of Cancer", "Tropic of Capricorn", "Prime Meridian"],
+                        answer: 1,
+                        explanation: "The Tropic of Cancer (23½° N) passes right through the middle of India across eight states."
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "The Northern Mountains",
+                subtitle: "The Himalayas & Life in Mountain States",
+                emoji: "🏔️",
+                color: "sky",
+                questions: [
+                    {
+                        q: "What does the word 'Himalaya' literally mean?",
+                        options: ["Land of Rivers", "Abode of Snow", "Golden Peak", "Green Valley"],
+                        answer: 1,
+                        explanation: "'Himalaya' means 'Abode of Snow' because its highest peaks remain covered with snow all year round."
+                    },
+                    {
+                        q: "Which is the highest mountain range of the Himalayas?",
+                        options: ["Shiwalik", "Himachal", "Himadri", "Aravalli"],
+                        answer: 2,
+                        explanation: "The Himadri (Greater Himalayas) is the highest range, containing lofty peaks like Mount Everest and Kanchenjunga."
+                    },
+                    {
+                        q: "Which traditional loose woollen robe is worn by people in Kashmir to keep warm?",
+                        options: ["Phiran", "Mekhela Chador", "Dhoti", "Ghagra"],
+                        answer: 0,
+                        explanation: "People in Jammu & Kashmir wear the 'Phiran' and carry a small pot of burning coal called 'Kangri' inside it."
+                    },
+                    {
+                        q: "How do farmers grow crops on steep mountain slopes in the Himalayas?",
+                        options: ["Canal farming", "Terrace farming", "Desert farming", "Floating gardens"],
+                        answer: 1,
+                        explanation: "Farmers cut steps into the mountain slopes—called Terrace Farming—to prevent soil erosion and grow rice, tea, and fruits."
+                    },
+                    {
+                        q: "What are slow-moving rivers of ice found in the high Himadri mountains called?",
+                        options: ["Lagoons", "Glaciers", "Deltas", "Oases"],
+                        answer: 1,
+                        explanation: "Glaciers like Gangotri and Yamunotri are giant rivers of ice that melt to feed major Indian rivers year-round."
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "The Northern Plains",
+                subtitle: "River Basins, Fertile Soil & Life in Plains",
+                emoji: "🌾",
+                color: "emerald",
+                questions: [
+                    {
+                        q: "Why are the Northern Plains called the 'Food Bowl of India'?",
+                        options: ["They have huge deserts", "Rivers deposit rich alluvial soil ideal for crops", "It snows every month", "They are surrounded by oceans"],
+                        answer: 1,
+                        explanation: "Himalayan rivers like the Ganga, Yamuna, and Brahmaputra bring fertile alluvial soil, making the plains great for farming."
+                    },
+                    {
+                        q: "Which three major river basins make up the Northern Plains?",
+                        options: ["Narmada, Tapi, Godavari", "Satluj, Ganga, Brahmaputra", "Krishna, Kaveri, Mahanadi", "Luni, Sabarmati, Mahi"],
+                        answer: 1,
+                        explanation: "The Northern Plains are divided into the Satluj Basin, the Ganga Basin, and the Brahmaputra Basin."
+                    },
+                    {
+                        q: "The Sundarbans, the world's largest delta, is formed by which rivers?",
+                        options: ["Ganga and Brahmaputra", "Satluj and Beas", "Krishna and Kaveri", "Narmada and Tapi"],
+                        answer: 0,
+                        explanation: "The Ganga and Brahmaputra rivers join together before entering the Bay of Bengal to form the Sundarbans Delta."
+                    },
+                    {
+                        q: "Which harvest festival is famously celebrated with Bhangra and Gidda in Punjab?",
+                        options: ["Pongal", "Onam", "Baisakhi", "Bihu"],
+                        answer: 2,
+                        explanation: "Baisakhi is celebrated with great joy in Punjab, located in the fertile Satluj river basin."
+                    },
+                    {
+                        q: "Which famous classical dance form originated in Uttar Pradesh in the Ganga Basin?",
+                        options: ["Kathak", "Bharatanatyam", "Kuchipudi", "Manipuri"],
+                        answer: 0,
+                        explanation: "Kathak is a graceful classical dance from Uttar Pradesh known for fast footwork and rhythmic spins."
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "The Western Desert – The Thar",
+                subtitle: "Climate, Lifestyle & Adaptations in Rajasthan",
+                emoji: "🐪",
+                color: "amber",
+                questions: [
+                    {
+                        q: "Why is the camel called the 'Ship of the Desert'?",
+                        options: ["It can swim in oceans", "It has padded feet and can survive days without water", "It runs faster than trains", "It eats only sand"],
+                        answer: 1,
+                        explanation: "Camels have broad padded feet to walk easily on hot sand and store fat in their humps to survive without food or water."
+                    },
+                    {
+                        q: "What is an 'Oasis' in a desert?",
+                        options: ["A giant sand dune", "A fertile green spot where underground water comes to the surface", "A camel race", "A desert storm"],
+                        answer: 1,
+                        explanation: "An oasis is a green area in the desert where underground water reaches the surface, allowing date palms and villages to thrive."
+                    },
+                    {
+                        q: "Which famous canal brings water from the Satluj River to the Thar Desert?",
+                        options: ["Suez Canal", "Indira Gandhi Canal", "Buckingham Canal", "Panama Canal"],
+                        answer: 1,
+                        explanation: "The Indira Gandhi Canal has turned large parts of the Thar Desert in Rajasthan green for farming!"
+                    },
+                    {
+                        q: "What are small hills of loose sand shifted by strong desert winds called?",
+                        options: ["Glaciers", "Sand Dunes", "Plateaus", "Deltas"],
+                        answer: 1,
+                        explanation: "Strong winds blow loose sand into mounds called Sand Dunes, which keep changing their shape and place."
+                    },
+                    {
+                        q: "Which city in Rajasthan is popularly known as the 'Pink City'?",
+                        options: ["Jodhpur", "Udaipur", "Jaipur", "Jaisalmer"],
+                        answer: 2,
+                        explanation: "Jaipur, the capital of Rajasthan, is famous worldwide as the 'Pink City' for its pink-hued historic buildings."
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "The Southern Plateaus",
+                subtitle: "Malwa & Deccan Plateaus, Rivers & Minerals",
+                emoji: "⛰️",
+                color: "purple",
+                questions: [
+                    {
+                        q: "What is a 'Plateau'?",
+                        options: ["A flat land with a high, flat top like a table", "A deep underwater valley", "A snow-covered peak", "An island in the sea"],
+                        answer: 0,
+                        explanation: "A plateau is a raised flat-topped landform, often called a 'tableland'."
+                    },
+                    {
+                        q: "Which mountain range divides the Southern Plateaus into the Central Highlands and Deccan Plateau?",
+                        options: ["The Himalayas", "Vindhya and Satpura Ranges", "Nilgiri Hills", "Karakoram Range"],
+                        answer: 1,
+                        explanation: "The Narmada River and the Vindhya & Satpura ranges separate the Central Highlands (Malwa/Chota Nagpur) from the Deccan Plateau."
+                    },
+                    {
+                        q: "Which plateau region is famous as the 'Storehouse of Minerals' in India?",
+                        options: ["Chota Nagpur Plateau", "Ladakh Plateau", "Thar Desert", "Malabar Coast"],
+                        answer: 0,
+                        explanation: "The Chota Nagpur Plateau (in Jharkhand, Odisha, Chhattisgarh) is rich in coal, iron ore, mica, and bauxite."
+                    },
+                    {
+                        q: "Why do rivers of the Deccan Plateau depend mainly on rain?",
+                        options: ["They start from melting glaciers", "They are rain-fed and do not originate in snowy mountains", "They flow underground", "They are frozen in winter"],
+                        answer: 1,
+                        explanation: "Unlike Himalayan rivers, rivers like Godavari, Krishna, and Kaveri are fed by monsoon rains and can dry up in summer."
+                    },
+                    {
+                        q: "Which river is the longest in the Deccan Plateau and is called 'Dakshin Ganga'?",
+                        options: ["Godavari", "Kaveri", "Narmada", "Tapi"],
+                        answer: 0,
+                        explanation: "The Godavari is the longest river in Peninsular India and is often lovingly called 'Dakshin Ganga'."
+                    }
+                ]
+            },
+            {
+                id: 6,
+                title: "The Coastal Plains and Islands",
+                subtitle: "Eastern & Western Coasts, Andaman & Lakshadweep",
+                emoji: "🏝️",
+                color: "teal",
+                questions: [
+                    {
+                        q: "Where do the Eastern and Western Coastal Plains meet?",
+                        options: ["Mumbai", "Kanyakumari", "Kolkata", "Goa"],
+                        answer: 1,
+                        explanation: "Both coastal plains meet at Kanyakumari, the southernmost tip of the Indian mainland."
+                    },
+                    {
+                        q: "Which group of Indian islands is located in the Arabian Sea and is made of corals?",
+                        options: ["Andaman and Nicobar Islands", "Lakshadweep Islands", "Majuli Island", "Elephanta Island"],
+                        answer: 1,
+                        explanation: "Lakshadweep is a group of 36 small coral islands located in the Arabian Sea."
+                    },
+                    {
+                        q: "Which famous lagoons or 'backwaters' are a major attraction on the Malabar Coast?",
+                        options: ["Kerala Backwaters", "Dal Lake", "Chilika Lake", "Pangong Lake"],
+                        answer: 0,
+                        explanation: "The Malabar Coast in Kerala is famous for its scenic lagoons (backwaters) and boat races."
+                    },
+                    {
+                        q: "What is the capital of the Andaman and Nicobar Islands?",
+                        options: ["Kavaratti", "Port Blair (Sri Vijaya Puram)", "Panaji", "Puducherry"],
+                        answer: 1,
+                        explanation: "Port Blair (officially renamed Sri Vijaya Puram) is the capital of the Andaman and Nicobar Islands in the Bay of Bengal."
+                    },
+                    {
+                        q: "What is the southernmost point of the entire Indian Union, located in the Nicobar Islands?",
+                        options: ["Kanyakumari", "Indira Point", "Rameswaram", "Kochi"],
+                        answer: 1,
+                        explanation: "Indira Point in the Great Nicobar Island is the southernmost tip of India's territory."
+                    }
+                ]
+            },
+            {
+                id: 7,
+                title: "The Climate of India",
+                subtitle: "Summer, Monsoon & Winter Seasons",
+                emoji: "🌦️",
+                color: "blue",
+                questions: [
+                    {
+                        q: "What are the hot, dry winds that blow across the Northern Plains during summer afternoons called?",
+                        options: ["Monsoon", "Loo", "Breeze", "Cyclone"],
+                        answer: 1,
+                        explanation: "Hot, dry winds called 'Loo' blow during May and June in northern India."
+                    },
+                    {
+                        q: "Which winds bring heavy rainfall to almost all parts of India between June and September?",
+                        options: ["Monsoon Winds", "Trade Winds", "Polar Winds", "Western Disturbances"],
+                        answer: 0,
+                        explanation: "Moisture-laden Southwest Monsoon winds blow from the Arabian Sea and Bay of Bengal, bringing rain across India."
+                    },
+                    {
+                        q: "Which place in Meghalaya receives the highest rainfall in the world?",
+                        options: ["Jaisalmer", "Mawsynram", "Leh", "Jaipur"],
+                        answer: 1,
+                        explanation: "Mawsynram (near Cherrapunji) in Meghalaya receives the heaviest average annual rainfall on Earth!"
+                    },
+                    {
+                        q: "Why do coastal cities like Mumbai and Chennai have a moderate climate all year?",
+                        options: ["They are near snow", "Cool sea breezes keep them neither too hot nor too cold", "They have no summer", "They are on high mountains"],
+                        answer: 1,
+                        explanation: "The sea heats up and cools down slowly, giving coastal cities a pleasant, moderate climate."
+                    },
+                    {
+                        q: "What is the difference between 'Weather' and 'Climate'?",
+                        options: ["Weather changes day-to-day; Climate is the average weather over many years", "They mean the exact same thing", "Weather is only in summer", "Climate changes every hour"],
+                        answer: 0,
+                        explanation: "Weather describes daily atmospheric conditions (sunny, rainy), while Climate is the long-term weather pattern of a place."
+                    }
+                ]
+            },
+            {
+                id: 8,
+                title: "Natural Resources of India",
+                subtitle: "Renewable vs. Non-Renewable Resources & Conservation",
+                emoji: "♻️",
+                color: "emerald",
+                questions: [
+                    {
+                        q: "What are 'Natural Resources'?",
+                        options: ["Toys made in factories", "Gifts of nature like air, water, sunlight, soil, forests, and minerals", "Only gold and diamonds", "Plastic and glass items"],
+                        answer: 1,
+                        explanation: "Natural resources are valuable materials provided by nature—such as sunlight, air, water, soil, forests, and minerals—that support life."
+                    },
+                    {
+                        q: "Which of the following is an inexhaustible (renewable) resource that will never run out?",
+                        options: ["Coal", "Petroleum", "Sunlight", "Natural Gas"],
+                        answer: 2,
+                        explanation: "Sunlight, wind, and flowing water are renewable (inexhaustible) resources because nature continuously replenishes them!"
+                    },
+                    {
+                        q: "Why are coal and petroleum called 'Non-Renewable' (exhaustible) resources?",
+                        options: ["They are made in labs", "They take millions of years to form and can run out if overused", "They grow on trees", "They are found in clouds"],
+                        answer: 1,
+                        explanation: "Fossil fuels like coal and petroleum formed over millions of years from dead plants and animals, so once used up, they cannot be replaced quickly."
+                    },
+                    {
+                        q: "Which clean energy resource uses giant wind turbines to generate electricity?",
+                        options: ["Wind Energy", "Coal Power", "Diesel Generators", "Charcoal"],
+                        answer: 0,
+                        explanation: "Wind energy is a clean, renewable resource that produces electricity without polluting the air."
+                    },
+                    {
+                        q: "What is the golden rule of conserving natural resources?",
+                        options: ["Leave taps and lights on", "Reduce, Reuse, and Recycle", "Cut down all forests", "Burn more plastic"],
+                        answer: 1,
+                        explanation: "Following the 3 Rs—Reduce, Reuse, and Recycle—helps save water, electricity, trees, and minerals for future generations!"
+                    }
+                ]
+            },
+            {
+                id: 9,
+                title: "Our Soil",
+                subtitle: "Types of Soil & Soil Conservation",
+                emoji: "🌱",
+                color: "amber",
+                questions: [
+                    {
+                        q: "Which soil is formed from volcanic lava rocks and is best for growing cotton?",
+                        options: ["Alluvial Soil", "Black Soil (Regur)", "Desert Soil", "Laterite Soil"],
+                        answer: 1,
+                        explanation: "Black soil (also called Regur soil) holds moisture well and is ideal for growing cotton and sugarcane."
+                    },
+                    {
+                        q: "Which is the most fertile soil in India, deposited by rivers in the Northern Plains?",
+                        options: ["Alluvial Soil", "Red Soil", "Sandy Soil", "Mountain Soil"],
+                        answer: 0,
+                        explanation: "Alluvial soil is rich in humus and minerals, making it India's most fertile soil."
+                    },
+                    {
+                        q: "What gives Red Soil its distinct red colour?",
+                        options: ["Red flowers", "Presence of iron", "Red bricks", "Sunlight"],
+                        answer: 1,
+                        explanation: "Red soil gets its reddish colour from the high amount of iron present in it."
+                    },
+                    {
+                        q: "What is the best way to prevent soil erosion?",
+                        options: ["Cutting down trees", "Planting more trees (Afforestation)", "Overgrazing by cattle", "Burning forests"],
+                        answer: 1,
+                        explanation: "Tree roots bind the soil tightly together, preventing wind and water from washing away the fertile topsoil."
+                    },
+                    {
+                        q: "Which soil is found in hilly areas with heavy rainfall and is used to make bricks?",
+                        options: ["Laterite Soil", "Desert Soil", "Alluvial Soil", "Black Soil"],
+                        answer: 0,
+                        explanation: "Laterite soil forms in areas with heavy rain and high temperatures; it hardens like brick when dried and supports tea and coffee."
+                    }
+                ]
+            },
+            {
+                id: 10,
+                title: "Forests and Wildlife of India",
+                subtitle: "Types of Forests & National Parks",
+                emoji: "🐅",
+                color: "green",
+                questions: [
+                    {
+                        q: "Which type of trees shed their leaves once a year during the dry summer season?",
+                        options: ["Evergreen Trees", "Deciduous (Monsoon) Trees", "Coniferous Trees", "Cactus Plants"],
+                        answer: 1,
+                        explanation: "Deciduous trees like teak, sal, and sandalwood shed their leaves in the dry season to save water."
+                    },
+                    {
+                        q: "Mangrove trees like 'Sundari' have special breathing roots. Where are they found?",
+                        options: ["Thar Desert", "Tidal / Mangrove Forests (Deltas)", "Snowy Himalayas", "Rocky Plateaus"],
+                        answer: 1,
+                        explanation: "Tidal or Mangrove forests grow in marshy river deltas like the Sundarbans where fresh and salty sea water mix."
+                    },
+                    {
+                        q: "Kaziranga National Park in Assam is famous for protecting which rare animal?",
+                        options: ["Asiatic Lion", "One-horned Rhinoceros", "Snow Leopard", "Camel"],
+                        answer: 1,
+                        explanation: "Kaziranga National Park is home to the world's largest population of the Great Indian One-horned Rhinoceros."
+                    },
+                    {
+                        q: "Where is the Gir National Park, the only natural home of the Asiatic Lion, located?",
+                        options: ["Gujarat", "Kerala", "Uttarakhand", "Odisha"],
+                        answer: 0,
+                        explanation: "Gir Forest National Park in Gujarat is the only place in the world where Asiatic lions live in the wild."
+                    },
+                    {
+                        q: "Which tree-planting festival is celebrated across India every July to protect forests?",
+                        options: ["Van Mahotsav", "Diwali", "Holi", "Raksha Bandhan"],
+                        answer: 0,
+                        explanation: "Van Mahotsav ('Festival of Trees') is celebrated every year in the first week of July by planting thousands of saplings!"
+                    }
+                ]
+            },
+            {
+                id: 11,
+                title: "Our Water Resources",
+                subtitle: "Sources of Water, Dams, Canals & Conservation",
+                emoji: "💧",
+                color: "cyan",
+                questions: [
+                    {
+                        q: "Why are multipurpose dams called the 'Temples of Modern India'?",
+                        options: ["They are made of gold", "They generate hydroelectricity, irrigate farms, and control floods", "Only tourists visit them", "They store seawater"],
+                        answer: 1,
+                        explanation: "Dams store river water to produce electricity, supply water to canals, control floods, and support fish breeding."
+                    },
+                    {
+                        q: "Which is the longest dam in India, built across the Mahanadi River in Odisha?",
+                        options: ["Bhakra Nangal Dam", "Hirakud Dam", "Sardar Sarovar Dam", "Tehri Dam"],
+                        answer: 1,
+                        explanation: "The Hirakud Dam across the Mahanadi River in Odisha is the longest earthen dam in India."
+                    },
+                    {
+                        q: "What is the main source of fresh water on Earth?",
+                        options: ["Oceans", "Rain", "Wells", "Canals"],
+                        answer: 1,
+                        explanation: "Rain is the primary source of fresh water that fills our rivers, lakes, ponds, and underground water."
+                    },
+                    {
+                        q: "Which smart method collects and stores rainwater from rooftops for future use?",
+                        options: ["Rainwater Harvesting", "Deforestation", "Water Pollution", "Drip Flooding"],
+                        answer: 0,
+                        explanation: "Rainwater harvesting saves rainwater from rooftops into underground tanks so we don't waste a single drop!"
+                    },
+                    {
+                        q: "How are 'Canals' helpful to farmers in India?",
+                        options: ["They carry river water to dry fields for irrigation", "They store coal underground", "They block rainfall", "They make seawater salty"],
+                        answer: 0,
+                        explanation: "Canals are man-made water channels dug from rivers to carry water directly to agricultural fields."
+                    }
+                ]
+            }
+        ];
+
+        /* --------------------------------------------------------------------------
+           2. MATCH & SORT ROUNDS DATA (4 ROUNDS INCLUDING NATURAL RESOURCES)
+           -------------------------------------------------------------------------- */
+        const MATCH_ROUNDS = [
+            {
+                title: "Round 1: Natural Resources Lab",
+                pairs: [
+                    { id: "nr1", left: "Sunlight & Wind ☀️", right: "Renewable (Inexhaustible) Energy" },
+                    { id: "nr2", left: "Coal & Petroleum ⛽", right: "Non-Renewable Fossil Fuels" },
+                    { id: "nr3", left: "Forests & Trees 🌳", right: "Give Oxygen & Prevent Erosion" },
+                    { id: "nr4", left: "Iron & Bauxite ⛏️", right: "Valuable Mineral Resources" }
+                ]
+            },
+            {
+                title: "Round 2: Soils & Crops of India",
+                pairs: [
+                    { id: "m1", left: "Black Soil 🖤", right: "Best for growing Cotton" },
+                    { id: "m2", left: "Alluvial Soil 🌾", right: "Deposited by Himalayan Rivers" },
+                    { id: "m3", left: "Desert Soil 🏜️", right: "Sandy & needs irrigation" },
+                    { id: "m4", left: "Mountain Soil 🌲", right: "Good for Tea & Apple orchards" }
+                ]
+            },
+            {
+                title: "Round 3: Famous Parks & Wildlife",
+                pairs: [
+                    { id: "m5", left: "Gir Forest (Gujarat) 🦁", right: "Home of the Asiatic Lion" },
+                    { id: "m6", left: "Kaziranga (Assam) 🦏", right: "One-horned Rhinoceros" },
+                    { id: "m7", left: "Sundarbans (Bengal) 🐅", right: "Royal Bengal Tiger & Mangroves" },
+                    { id: "m8", left: "Jim Corbett (Uttarakhand) 🌿", right: "India's First National Park" }
+                ]
+            },
+            {
+                title: "Round 4: Landforms & Water Wonders",
+                pairs: [
+                    { id: "m9", left: "Hirakud Dam 🌊", right: "Built on Mahanadi River" },
+                    { id: "m10", left: "Lakshadweep 🏝️", right: "Coral islands in Arabian Sea" },
+                    { id: "m11", left: "Indira Gandhi Canal 🚰", right: "Brings water to Thar Desert" },
+                    { id: "m12", left: "Chota Nagpur Plateau 🏔️", right: "Storehouse of Minerals" }
+                ]
+            }
+        ];
+
+        /* --------------------------------------------------------------------------
+           3. STATE MANAGEMENT & LOCAL STORAGE
+           -------------------------------------------------------------------------- */
+        let state = {
+            score: 0,
+            chapterStars: {}, // { 1: 3, 2: 2, ... }
+            soundEnabled: true,
+            currentMode: null, // 'chapter' | 'rapid' | 'match'
+            activeChapterId: null,
+            quizQueue: [],
+            currentQIndex: 0,
+            sessionCorrect: 0,
+            sessionPoints: 0,
+            streak: 0,
+            rapidTimer: null,
+            timeLeft: 60,
+            matchRoundIndex: 0,
+            selectedLeft: null,
+            matchedCount: 0
+        };
+
+        // Load saved progress safely
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem('bharat_explorer_g4_v2');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state.score = parsed.score || 0;
+                    state.chapterStars = parsed.chapterStars || {};
+                }
+            } catch (e) {
+                console.warn("Could not load saved progress", e);
+            }
+            updateHUD();
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem('bharat_explorer_g4_v2', JSON.stringify({
+                    score: state.score,
+                    chapterStars: state.chapterStars
+                }));
+            } catch (e) {
+                console.warn("Could not save progress", e);
+            }
+            updateHUD();
+        }
+
+        /* --------------------------------------------------------------------------
+           4. WEB AUDIO API & SPEECH SYNTHESIS ENGINE (YAYYY! & ENCOURAGING VOICE)
+           -------------------------------------------------------------------------- */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playTone(freq, type = 'sine', duration = 0.15, delay = 0, volume = 0.15) {
+            if (!state.soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(audioCtx.currentTime + delay);
+                osc.stop(audioCtx.currentTime + delay + duration);
+            } catch (e) {
+                // Ignore audio errors on restricted devices
+            }
+        }
+
+        function playCheerSweep() {
+            if (!state.soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now + 0.08);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
+                osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.52);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.14, now + 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now + 0.08);
+                osc.stop(now + 0.6);
+            } catch (e) {
+                // Ignore audio errors on restricted devices
+            }
+        }
+
+        function speakFeedback(text, pitch = 1.1, rate = 1.05) {
+            if (!state.soundEnabled) return;
+            try {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.pitch = pitch;
+                    utterance.rate = rate;
+                    utterance.volume = 1.0;
+
+                    const voices = window.speechSynthesis.getVoices();
+                    const preferred = voices.find(v => /en/i.test(v.lang) && /(Google|Samantha|Zira|Aria|Natural|Female)/i.test(v.name))
+                                   || voices.find(v => /en/i.test(v.lang));
+                    if (preferred) utterance.voice = preferred;
+
+                    window.speechSynthesis.speak(utterance);
+                }
+            } catch (e) {
+                // Fallback chimes already play alongside speech
+            }
+        }
+
+        function sfxClick() { playTone(520, 'triangle', 0.08); }
+
+        function sfxCorrect() {
+            playTone(523.25, 'sine', 0.14, 0, 0.16);        // C5
+            playTone(659.25, 'sine', 0.14, 0.08, 0.16);     // E5
+            playTone(783.99, 'sine', 0.18, 0.16, 0.16);     // G5
+            playTone(1046.50, 'triangle', 0.30, 0.24, 0.18); // C6
+            playCheerSweep();
+            speakFeedback("Yayyy!", 1.38, 1.12);
+        }
+
+        function sfxWrong() {
+            playTone(260, 'sine', 0.18, 0, 0.14);
+            playTone(210, 'sine', 0.24, 0.14, 0.14);
+            speakFeedback("You can do better!", 1.08, 0.98);
+        }
+
+        function sfxFanfare() {
+            playTone(523.25, 'triangle', 0.12, 0, 0.16);
+            playTone(659.25, 'triangle', 0.12, 0.1, 0.16);
+            playTone(783.99, 'triangle', 0.12, 0.2, 0.16);
+            playTone(1046.50, 'triangle', 0.35, 0.3, 0.18);
+            speakFeedback("Yayyy! Awesome job!", 1.32, 1.08);
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const label = document.getElementById('sound-label');
+            const btn = document.getElementById('sound-toggle');
+
+            if (state.soundEnabled) {
+                icon.textContent = '🔊';
+                label.textContent = 'Sound & Voice: ON';
+                btn.classList.remove('bg-rose-50', 'border-rose-300', 'text-rose-700');
+                btn.classList.add('bg-slate-100', 'border-slate-300', 'text-slate-700');
+                sfxClick();
+            } else {
+                icon.textContent = '🔇';
+                label.textContent = 'Sound & Voice: OFF';
+                btn.classList.remove('bg-slate-100', 'border-slate-300', 'text-slate-700');
+                btn.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-700');
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+
+        /* --------------------------------------------------------------------------
+           5. HUD & NAVIGATION HELPERS
+           -------------------------------------------------------------------------- */
+        function getRankInfo(score) {
+            if (score >= 1500) return { title: "Bharat Champion", icon: "👑", next: "Max Rank!" };
+            if (score >= 1000) return { title: "Resource Guardian", icon: "🌍", next: "1500 pts" };
+            if (score >= 600)  return { title: "Geography Explorer", icon: "🗺️", next: "1000 pts" };
+            if (score >= 250)  return { title: "Map Scout", icon: "🧭", next: "600 pts" };
+            return { title: "Junior Traveller", icon: "🎒", next: "250 pts" };
+        }
+
+        function updateHUD() {
+            const totalStars = Object.values(state.chapterStars).reduce((a, b) => a + b, 0);
+            const maxStars = CHAPTERS.length * 3;
+            const rank = getRankInfo(state.score);
+
+            document.getElementById('hud-stars').textContent = `${totalStars}/${maxStars}`;
+            document.getElementById('hud-score').textContent = state.score;
+            document.getElementById('hud-rank-icon').textContent = rank.icon;
+            document.getElementById('hud-rank-title').textContent = rank.title;
+
+            const homeRank = document.getElementById('home-rank-text');
+            if (homeRank) {
+                homeRank.textContent = `${rank.icon} ${rank.title}`;
+                document.getElementById('home-next-rank').textContent = rank.next;
+            }
+        }
+
+        function showView(viewId) {
+            clearInterval(state.rapidTimer);
+            ['view-home', 'view-chapters', 'view-quiz', 'view-match', 'view-results'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goHome() {
+            sfxClick();
+            updateHUD();
+            showView('view-home');
+        }
+
+        /* --------------------------------------------------------------------------
+           6. CHAPTER MAP RENDERING
+           -------------------------------------------------------------------------- */
+        function openChapterMap() {
+            sfxClick();
+            const grid = document.getElementById('chapters-grid');
+            grid.innerHTML = '';
+
+            const totalStars = Object.values(state.chapterStars).reduce((a, b) => a + b, 0);
+            const maxStars = CHAPTERS.length * 3;
+            document.getElementById('map-total-stars').textContent = `${totalStars} / ${maxStars} ⭐`;
+
+            CHAPTERS.forEach(ch => {
+                const stars = state.chapterStars[ch.id] || 0;
+                const starStr = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+                const isCompleted = stars === 3;
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-3xl p-5 border-4 ${isCompleted ? 'border-emerald-300' : 'border-slate-200'} shadow-md flex items-center justify-between gap-4 hover:border-orange-400 transition-all`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-orange-50 border-2 border-orange-200 text-3xl flex items-center justify-center shrink-0">
+                            ${ch.emoji}
+                        </div>
+                        <div>
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-orange-500">Chapter ${ch.id}</span>
+                            <h3 class="text-lg font-bold text-slate-800 leading-tight">${ch.title}</h3>
+                            <p class="text-xs font-semibold text-slate-500 mb-1.5">${ch.subtitle}</p>
+                            <div class="text-sm tracking-widest" title="${stars} out of 3 stars">${starStr}</div>
+                        </div>
+                    </div>
+                    <button onclick="startChapter(${ch.id})" class="btn-game shrink-0 px-4 py-2.5 rounded-2xl ${stars > 0 ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-sky-500 hover:bg-sky-600'} text-white font-fredoka font-bold text-sm">
+                        ${stars > 0 ? 'Replay' : 'Play'} ▶
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+
+            showView('view-chapters');
+        }
+
+        /* --------------------------------------------------------------------------
+           7. QUIZ ENGINE (CHAPTER QUEST & RAPID FIRE)
+           -------------------------------------------------------------------------- */
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function startChapter(chapterId) {
+            sfxClick();
+            const ch = CHAPTERS.find(c => c.id === chapterId);
+            if (!ch) return;
+
+            state.currentMode = 'chapter';
+            state.activeChapterId = chapterId;
+            state.quizQueue = ch.questions.map(q => ({
+                ...q,
+                chapterTitle: `Ch ${ch.id}: ${ch.title}`,
+                emoji: ch.emoji
+            }));
+            state.currentQIndex = 0;
+            state.sessionCorrect = 0;
+            state.sessionPoints = 0;
+            state.streak = 0;
+
+            document.getElementById('quiz-header-badge').textContent = `Chapter ${ch.id}: ${ch.title}`;
+            showView('view-quiz');
+            renderQuestion();
+        }
+
+        function startRapidFire() {
+            sfxClick();
+            state.currentMode = 'rapid';
+            state.activeChapterId = null;
+
+            let allQs = [];
+            CHAPTERS.forEach(ch => {
+                ch.questions.forEach(q => {
+                    allQs.push({
+                        ...q,
+                        chapterTitle: `Ch ${ch.id}: ${ch.title}`,
+                        emoji: ch.emoji
+                    });
+                });
+            });
+
+            state.quizQueue = shuffleArray(allQs).slice(0, 12);
+            state.currentQIndex = 0;
+            state.sessionCorrect = 0;
+            state.sessionPoints = 0;
+            state.streak = 0;
+            state.timeLeft = 60;
+
+            document.getElementById('quiz-header-badge').textContent = `⚡ Rapid Fire • Streak x1`;
+            showView('view-quiz');
+            renderQuestion();
+
+            updateRapidTimerDisplay();
+            state.rapidTimer = setInterval(() => {
+                state.timeLeft--;
+                updateRapidTimerDisplay();
+                if (state.timeLeft <= 0) {
+                    clearInterval(state.rapidTimer);
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+
+        function updateRapidTimerDisplay() {
+            const pill = document.getElementById('quiz-status-pill');
+            pill.textContent = `⏱️ ${state.timeLeft}s`;
+            if (state.timeLeft <= 10) {
+                pill.className = "px-3.5 py-1.5 rounded-full bg-rose-100 border-2 border-rose-400 text-rose-800 text-sm font-extrabold animate-pulse";
+            } else {
+                pill.className = "px-3.5 py-1.5 rounded-full bg-amber-100 border-2 border-amber-300 text-amber-900 text-sm font-extrabold";
+            }
+        }
+
+        function renderQuestion() {
+            const qObj = state.quizQueue[state.currentQIndex];
+            const total = state.quizQueue.length;
+
+            const pct = ((state.currentQIndex) / total) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${Math.max(10, pct)}%`;
+
+            if (state.currentMode === 'chapter') {
+                const pill = document.getElementById('quiz-status-pill');
+                pill.className = "px-3.5 py-1.5 rounded-full bg-amber-100 border-2 border-amber-300 text-amber-900 text-sm font-extrabold";
+                pill.textContent = `Q ${state.currentQIndex + 1} / ${total}`;
+            } else {
+                const mult = Math.min(3, 1 + Math.floor(state.streak / 2));
+                document.getElementById('quiz-header-badge').textContent = `⚡ Rapid Fire • Streak ${state.streak} (x${mult})`;
+            }
+
+            document.getElementById('question-emoji').textContent = qObj.emoji;
+            document.getElementById('question-topic-tag').textContent = qObj.chapterTitle;
+            document.getElementById('question-text').textContent = qObj.q;
+
+            document.getElementById('feedback-box').classList.add('hidden');
+
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            qObj.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "option-card w-full text-left p-4 rounded-2xl bg-slate-50 border-2 border-slate-300 font-bold text-slate-700 flex items-center gap-3 focus:outline-none";
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-white border-2 border-slate-300 flex items-center justify-center text-sm font-extrabold text-slate-600 shrink-0">
+                        ${letters[idx]}
+                    </span>
+                    <span class="text-base leading-snug">${optText}</span>
+                `;
+                btn.onclick = () => handleAnswer(idx, btn);
+                optContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedIndex, selectedBtn) {
+            const qObj = state.quizQueue[state.currentQIndex];
+            const allBtns = document.querySelectorAll('#options-container button');
+
+            if (selectedBtn.classList.contains('disabled')) return;
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            const isCorrect = selectedIndex === qObj.answer;
+            const fbBox = document.getElementById('feedback-box');
+            const fbTitle = document.getElementById('feedback-title');
+            const fbIcon = document.getElementById('feedback-icon');
+            const fbExp = document.getElementById('feedback-explanation');
+
+            if (isCorrect) {
+                sfxCorrect();
+                selectedBtn.classList.add('option-correct');
+                state.sessionCorrect++;
+                state.streak++;
+
+                const mult = state.currentMode === 'rapid' ? Math.min(3, 1 + Math.floor(state.streak / 2)) : 1;
+                const pts = 25 * mult;
+                state.sessionPoints += pts;
+                state.score += pts;
+                saveProgress();
+
+                fbBox.className = "rounded-3xl p-5 border-4 border-emerald-400 bg-emerald-50 text-emerald-900 mb-5 animate-pop";
+                fbIcon.textContent = "🌟";
+                fbTitle.textContent = `Yayyy! Spot On! (+${pts} pts)`;
+            } else {
+                sfxWrong();
+                selectedBtn.classList.add('option-wrong');
+                allBtns[qObj.answer].classList.add('option-correct');
+                state.streak = 0;
+
+                fbBox.className = "rounded-3xl p-5 border-4 border-rose-300 bg-rose-50 text-rose-900 mb-5 animate-pop";
+                fbIcon.textContent = "💡";
+                fbTitle.textContent = "You can do better! Here's the fact:";
+            }
+
+            fbExp.textContent = qObj.explanation;
+            fbBox.classList.remove('hidden');
+
+            const nextBtn = document.getElementById('next-question-btn');
+            nextBtn.textContent = (state.currentQIndex + 1 >= state.quizQueue.length) ? "See Results 🏆" : "Next Question →";
+        }
+
+        function nextQuestion() {
+            sfxClick();
+            state.currentQIndex++;
+            if (state.currentQIndex >= state.quizQueue.length) {
+                finishQuiz();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function quitQuiz() {
+            sfxClick();
+            clearInterval(state.rapidTimer);
+            if (state.currentMode === 'chapter') {
+                openChapterMap();
+            } else {
+                goHome();
+            }
+        }
+
+        function finishQuiz() {
+            clearInterval(state.rapidTimer);
+            document.getElementById('quiz-progress-bar').style.width = '100%';
+
+            const total = state.quizQueue.length;
+            const correct = state.sessionCorrect;
+            const ratio = total > 0 ? correct / total : 0;
+
+            let starsEarned = 0;
+            if (ratio >= 0.85) starsEarned = 3;
+            else if (ratio >= 0.5) starsEarned = 2;
+            else if (correct >= 1) starsEarned = 1;
+
+            if (state.currentMode === 'chapter' && state.activeChapterId) {
+                const prevBest = state.chapterStars[state.activeChapterId] || 0;
+                if (starsEarned > prevBest) {
+                    state.chapterStars[state.activeChapterId] = starsEarned;
+                    saveProgress();
+                }
+            }
+
+            const resTitle = document.getElementById('result-title');
+            const resSub = document.getElementById('result-subtitle');
+            const resStars = document.getElementById('result-stars-box');
+
+            if (state.currentMode === 'chapter') {
+                const ch = CHAPTERS.find(c => c.id === state.activeChapterId);
+                resTitle.textContent = `Chapter ${ch.id} Complete!`;
+                resSub.textContent = ch.title;
+                resStars.classList.remove('hidden');
+                resStars.innerHTML = '⭐'.repeat(starsEarned) + '☆'.repeat(3 - starsEarned);
+            } else {
+                resTitle.textContent = "Rapid Fire Complete!";
+                resSub.textContent = "Awesome speed and knowledge!";
+                resStars.classList.add('hidden');
+            }
+
+            document.getElementById('result-points').textContent = `+${state.sessionPoints}`;
+            document.getElementById('result-accuracy').textContent = `${correct} / ${total}`;
+
+            showView('view-results');
+
+            if (starsEarned >= 2 || correct >= 4) {
+                sfxFanfare();
+                launchConfetti();
+            } else {
+                sfxCorrect();
+            }
+        }
+
+        function retryLastMode() {
+            if (state.currentMode === 'chapter' && state.activeChapterId) {
+                startChapter(state.activeChapterId);
+            } else if (state.currentMode === 'rapid') {
+                startRapidFire();
+            } else {
+                startMatchGame();
+            }
+        }
+
+        /* --------------------------------------------------------------------------
+           8. MATCH & SORT MINI-GAME ENGINE
+           -------------------------------------------------------------------------- */
+        function startMatchGame() {
+            sfxClick();
+            state.currentMode = 'match';
+            state.matchRoundIndex = 0;
+            state.sessionPoints = 0;
+            state.sessionCorrect = 0;
+            showView('view-match');
+            loadMatchRound();
+        }
+
+        function loadMatchRound() {
+            const round = MATCH_ROUNDS[state.matchRoundIndex];
+            state.selectedLeft = null;
+            state.matchedCount = 0;
+
+            document.getElementById('match-round-title').textContent = round.title;
+            document.getElementById('match-round-num').textContent = state.matchRoundIndex + 1;
+            document.getElementById('match-feedback').classList.add('hidden');
+
+            const leftCol = document.getElementById('match-left-col');
+            const rightCol = document.getElementById('match-right-col');
+            leftCol.innerHTML = '';
+            rightCol.innerHTML = '';
+
+            const leftItems = shuffleArray(round.pairs);
+            const rightItems = shuffleArray(round.pairs);
+
+            leftItems.forEach(item => {
+                const btn = document.createElement('button');
+                btn.dataset.id = item.id;
+                btn.className = "match-left-btn option-card p-4 rounded-2xl bg-white border-2 border-sky-200 font-bold text-slate-800 text-sm sm:text-base text-center shadow-sm";
+                btn.textContent = item.left;
+                btn.onclick = () => selectMatchLeft(btn);
+                leftCol.appendChild(btn);
+            });
+
+            rightItems.forEach(item => {
+                const btn = document.createElement('button');
+                btn.dataset.id = item.id;
+                btn.className = "match-right-btn option-card p-4 rounded-2xl bg-white border-2 border-amber-200 font-bold text-slate-700 text-sm sm:text-base text-center shadow-sm";
+                btn.textContent = item.right;
+                btn.onclick = () => selectMatchRight(btn);
+                rightCol.appendChild(btn);
+            });
+        }
+
+        function selectMatchLeft(btn) {
+            if (btn.classList.contains('match-solved')) return;
+            sfxClick();
+            document.querySelectorAll('.match-left-btn').forEach(b => b.classList.remove('match-selected'));
+            btn.classList.add('match-selected');
+            state.selectedLeft = btn;
+        }
+
+        function selectMatchRight(rightBtn) {
+            if (rightBtn.classList.contains('match-solved')) return;
+            const fb = document.getElementById('match-feedback');
+
+            if (!state.selectedLeft) {
+                sfxWrong();
+                fb.textContent = "👈 First tap a card on the Left side!";
+                fb.className = "text-center p-3 rounded-2xl font-bold text-sm mb-4 bg-amber-100 text-amber-800 border-2 border-amber-300 animate-pop";
+                fb.classList.remove('hidden');
+                return;
+            }
+
+            const leftBtn = state.selectedLeft;
+            if (leftBtn.dataset.id === rightBtn.dataset.id) {
+                sfxCorrect();
+                leftBtn.classList.remove('match-selected');
+                leftBtn.classList.add('match-solved');
+                rightBtn.classList.add('match-solved');
+                state.selectedLeft = null;
+                state.matchedCount++;
+                state.sessionCorrect++;
+                state.sessionPoints += 25;
+                state.score += 25;
+                saveProgress();
+
+                fb.textContent = "Yayyy! Perfect Match! (+25 pts)";
+                fb.className = "text-center p-3 rounded-2xl font-bold text-sm mb-4 bg-emerald-100 text-emerald-800 border-2 border-emerald-300 animate-pop";
+                fb.classList.remove('hidden');
+
+                if (state.matchedCount === 4) {
+                    setTimeout(() => {
+                        state.matchRoundIndex++;
+                        if (state.matchRoundIndex < MATCH_ROUNDS.length) {
+                            loadMatchRound();
+                        } else {
+                            document.getElementById('result-title').textContent = "Match & Sort Master!";
+                            document.getElementById('result-subtitle').textContent = "You matched all 16 Social Science pairs!";
+                            document.getElementById('result-stars-box').classList.add('hidden');
+                            document.getElementById('result-points').textContent = `+${state.sessionPoints}`;
+                            document.getElementById('result-accuracy').textContent = `16 / 16`;
+                            showView('view-results');
+                            sfxFanfare();
+                            launchConfetti();
+                        }
+                    }, 900);
+                }
+            } else {
+                sfxWrong();
+                rightBtn.classList.add('option-wrong');
+                fb.textContent = "You can do better! Try another pair!";
+                fb.className = "text-center p-3 rounded-2xl font-bold text-sm mb-4 bg-rose-100 text-rose-800 border-2 border-rose-300 animate-pop";
+                fb.classList.remove('hidden');
+                setTimeout(() => {
+                    rightBtn.classList.remove('option-wrong');
+                }, 500);
+            }
+        }
+
+        /* --------------------------------------------------------------------------
+           9. CUSTOM MODAL FOR RESETTING PROGRESS
+           -------------------------------------------------------------------------- */
+        function confirmResetProgress() {
+            sfxClick();
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('hidden');
+            document.getElementById('modal-confirm-btn').onclick = () => {
+                state.score = 0;
+                state.chapterStars = {};
+                saveProgress();
+                closeModal();
+                sfxClick();
+            };
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        /* --------------------------------------------------------------------------
+           10. CELEBRATION CONFETTI ANIMATION (RESPONSIVE CANVAS)
+           -------------------------------------------------------------------------- */
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ['#F97316', '#22C55E', '#3B82F6', '#EAB308', '#EC4899'];
+            const pieces = Array.from({ length: 85 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                r: Math.random() * 6 + 4,
+                d: Math.random() * 40 + 10,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                tilt: Math.random() * 10 - 10,
+                tiltAngle: 0,
+                tiltAngleInc: Math.random() * 0.08 + 0.04
+            }));
+
+            let frame = 0;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    p.tiltAngle += p.tiltAngleInc;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) * 0.9;
+                    p.tilt = Math.sin(p.tiltAngle) * 12;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    ctx.stroke();
+                });
+
+                frame++;
+                if (frame < 130) {
+                    requestAnimationFrame(draw);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            draw();
+        }
+
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('confetti-canvas');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+
+        // Initialize Game on Window Load
+        window.onload = function () {
+            loadProgress();
+        };
+    </script>
+</body>
+</html>
